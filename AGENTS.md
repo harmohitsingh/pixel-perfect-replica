@@ -38,3 +38,4 @@ use the editor.
 - Load configurable browser storage after hydration; external demo database writes use optimistic revision matching and one atomic JSON ledger update to avoid partial batches.
 - Treat named approvers and anonymous database setup as demonstration workflows, not authenticated authorization; never claim protection against a complete ledger rewrite without independent anchoring.
 - Keep the four workspaces as separate TanStack routes inside a persistent shared ledger provider.
+- Prebundle notification, QR, and dialog dependencies alongside the template's React entries to avoid late optimizer updates leaving open previews with mixed React module versions.
