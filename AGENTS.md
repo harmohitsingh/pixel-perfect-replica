@@ -1,4 +1,5 @@
 <!-- LOVABLE:BEGIN -->
+
 > [!IMPORTANT]
 > This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
 > published git history — force pushing, or rebasing/amending/squashing commits
@@ -27,4 +28,13 @@ use the editor.
   `LOVABLE_API_KEY`. When Lovable does not provide one, users can bring their
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
+
 <!-- LOVABLE:END -->
+
+## VeriMark architecture
+
+- Keep cryptographic operations in the browser-safe ledger module and use Web Crypto SHA-256; SSR must not generate salts or read browser storage.
+- Retain immutable block snapshots alongside current records and append a new block for approved corrections so historical QR receipts stay verifiable.
+- Load configurable browser storage after hydration; external demo database writes use optimistic revision matching and one atomic JSON ledger update to avoid partial batches.
+- Treat named approvers and anonymous database setup as demonstration workflows, not authenticated authorization; never claim protection against a complete ledger rewrite without independent anchoring.
+- Keep the four workspaces as separate TanStack routes inside a persistent shared ledger provider.
