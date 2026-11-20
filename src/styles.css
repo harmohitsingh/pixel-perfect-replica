@@ -105,6 +105,8 @@
   --avatar-gold: oklch(0.95 0.032 80);
   --avatar-gold-ink: oklch(0.53 0.08 70);
   --overlay: oklch(0.2 0.01 160 / 0.5);
+  --qr-ink: oklch(0 0 0);
+  --qr-paper: oklch(1 0 0);
   --shadow-soft: 0 2px 5px oklch(0.25 0.015 160 / 0.025);
   --chart-1: var(--primary);
   --chart-2: var(--success);
@@ -1128,6 +1130,64 @@ dd {
   color: var(--muted-foreground);
   font-size: 8px;
   margin-top: 8px;
+}
+.sheet-qr .qr-enlarge-button {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  border-radius: 4px;
+  background: var(--qr-paper);
+}
+.sheet-qr .qr-enlarge-button svg {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+.qr-dialog {
+  width: calc(100% - 24px);
+  max-width: 430px;
+  max-height: 95dvh;
+  overflow-y: auto;
+  text-align: center;
+  border-radius: 7px;
+}
+.qr-modal-code {
+  width: 280px;
+  height: 280px;
+  max-width: 100%;
+  margin: 4px auto;
+  background: var(--qr-paper);
+}
+.qr-modal-code svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+.qr-modal-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.qr-modal-details span {
+  color: var(--muted-foreground);
+}
+.qr-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.qr-modal-actions button {
+  font-size: 11px;
+}
+.qr-image-reader {
+  display: none;
 }
 .sheet-actions {
   display: flex;

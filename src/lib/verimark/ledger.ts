@@ -407,14 +407,47 @@ export function parsePayload(text: string): Receipt {
 export const qrPayload = (r: Receipt) =>
   JSON.stringify({
     reg_no: r.reg_no,
-    subject_code: r.subject_code,
+    leaf_hash: r.leaf_hash,
+    block_index: r.block_index,
     marks: r.marks,
     grade: r.grade,
-    salt: r.salt,
-    leaf_hash: r.leaf_hash,
-    merkle_proof: r.merkle_proof,
-    block_index: r.block_index,
   });
+export function resolvePayload(text: string, ledger: Ledger): Receipt {
+  const payload = JSON.parse(text) as Record<string, unknown> | null;
+  if (!payload || typeof payload !== "object" || Array.isArray(payload))
+    throw new Error("Invalid QR payload. Upload a VeriMark QR image or paste its JSON.");
+  // Preserve full-proof QR codes issued before compact payloads were introduced.
+  if ("salt" in payload || "merkle_proof" in payload) return parsePayload(text);
+  const { reg_no, leaf_hash, block_index, marks, grade } = payload;
+  if (
+    typeof reg_no !== "string" ||
+    !reg_no.trim() ||
+    typeof leaf_hash !== "string" ||
+    !/^[a-f0-9]{64}$/.test(leaf_hash) ||
+    typeof block_index !== "number" ||
+    !Number.isInteger(block_index) ||
+    block_index < 0 ||
+    typeof marks !== "number" ||
+    !Number.isFinite(marks) ||
+    marks < 0 ||
+    marks > 100 ||
+    typeof grade !== "string" ||
+    !grade.trim()
+  )
+    throw new Error(
+      "Invalid compact QR payload. Required fields: reg_no, leaf_hash, block_index, marks, grade.",
+    );
+  const block = ledger.blocks.find((b) => b.index === block_index);
+  if (!block) throw new Error("The referenced block is not available in this ledger.");
+  const matches = block.rows.filter((r) => r.reg_no === reg_no && r.leaf_hash === leaf_hash);
+  if (matches.length !== 1)
+    throw new Error("QR fingerprint does not match a unique result in the referenced block.");
+  const archived = matches[0];
+  if (!archived) throw new Error("Result not found in the referenced block.");
+  // Use the original salt/proof, but never replace marks/grade supplied by the QR:
+  // altered compact payloads must still fail cryptographic verification.
+  return { ...archived, marks, grade };
+}
 export async function verifyReceipt(ledger: Ledger, r: Receipt) {
   const block = ledger.blocks.find((b) => b.index === r.block_index);
   if (!block) throw new Error("The referenced block is not available in this ledger.");

@@ -10,21 +10,26 @@ export function Scanner({
 }) {
   const [error, setError] = useState("");
   const scanned = useRef(false);
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
   useEffect(() => {
     let disposed = false;
     let scanner: import("html5-qrcode").Html5Qrcode | undefined;
     void import("html5-qrcode")
       .then(async ({ Html5Qrcode }) => {
         if (disposed) return;
-        scanner = new Html5Qrcode("qr-camera");
+        scanner = new Html5Qrcode("qr-camera", {
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+          verbose: false,
+        });
         try {
           await scanner.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 240, height: 240 } },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
             (text) => {
               if (!scanned.current) {
                 scanned.current = true;
-                onScan(text);
+                onScanRef.current(text);
               }
             },
             () => {},
@@ -42,7 +47,7 @@ export function Scanner({
       disposed = true;
       if (scanner?.isScanning) void scanner.stop().catch(() => {});
     };
-  }, [onScan]);
+  }, []);
   return (
     <div className="camera-panel">
       <div id="qr-camera" />

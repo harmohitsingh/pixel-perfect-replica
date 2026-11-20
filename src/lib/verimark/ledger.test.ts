@@ -13,9 +13,61 @@ import {
   sha256,
   verifyReceipt,
   walkProof,
+  qrPayload,
+  resolvePayload,
 } from "./ledger";
 vi.stubGlobal("crypto", webcrypto);
 describe("VeriMark ledger rules", () => {
+  it("issues a compact payload with exactly the five verification fields", async () => {
+    const ledger = await publish(emptyLedger(), samples.slice(0, 1));
+    const row = ledger.records[0];
+    if (!row) throw new Error("Missing row");
+    expect(JSON.parse(qrPayload(row))).toEqual({
+      reg_no: "12204511",
+      leaf_hash: row.leaf_hash,
+      block_index: 0,
+      marks: 92,
+      grade: "O",
+    });
+    expect((await verifyReceipt(ledger, resolvePayload(qrPayload(row), ledger))).authentic).toBe(
+      true,
+    );
+  });
+  it("does not hide altered marks in a compact QR payload", async () => {
+    const ledger = await publish(emptyLedger(), samples.slice(0, 1));
+    const row = ledger.records[0];
+    if (!row) throw new Error("Missing row");
+    const payload = { ...JSON.parse(qrPayload(row)), marks: 99 };
+    const result = await verifyReceipt(ledger, resolvePayload(JSON.stringify(payload), ledger));
+    expect(result.authentic).toBe(false);
+    expect(result.differences.join(" ")).toContain("marks: QR 99; cryptographic record 92");
+  });
+  it("resolves historical compact receipts after a correction and still accepts original full proofs", async () => {
+    const original = await publish(emptyLedger(), samples.slice(0, 1));
+    const row = original.records[0];
+    if (!row) throw new Error("Missing row");
+    const pending = requestCorrection(original, keyOf(row), 94, "Revaluation", "Admin One");
+    const c = pending.corrections[0];
+    if (!c) throw new Error("Missing request");
+    const corrected = await approveCorrection(pending, c.id, "Admin Two");
+    const result = await verifyReceipt(corrected, resolvePayload(qrPayload(row), corrected));
+    expect(result.authentic).toBe(true);
+    expect(result.historical).toBe(true);
+    expect(
+      (await verifyReceipt(corrected, resolvePayload(JSON.stringify(row), corrected))).authentic,
+    ).toBe(true);
+  });
+  it("rejects an unknown compact fingerprint rather than substituting a student record", async () => {
+    const ledger = await publish(emptyLedger(), samples.slice(0, 1));
+    const row = ledger.records[0];
+    if (!row) throw new Error("Missing row");
+    expect(() =>
+      resolvePayload(
+        JSON.stringify({ ...JSON.parse(qrPayload(row)), leaf_hash: "a".repeat(64) }),
+        ledger,
+      ),
+    ).toThrow("fingerprint");
+  });
   it("loads eight realistic LPU students including registration 12204511", () => {
     expect(samples).toHaveLength(8);
     expect(samples[0]?.reg_no).toBe("12204511");

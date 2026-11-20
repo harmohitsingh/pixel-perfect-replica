@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ScanLine,
   Camera,
@@ -7,11 +7,12 @@ import {
   ArrowRight,
   Check,
   LoaderCircle,
+  FileUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeading, LedgerAside, useLedger } from "./workspace";
 import { Scanner } from "./scanner";
-import { parsePayload, verifyReceipt, leafInput, type Receipt } from "@/lib/verimark/ledger";
+import { resolvePayload, verifyReceipt, leafInput, type Receipt } from "@/lib/verimark/ledger";
 export function VerifyPanel() {
   const { fresh } = useLedger();
   const [input, setInput] = useState("");
@@ -20,6 +21,35 @@ export function VerifyPanel() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<Awaited<ReturnType<typeof verifyReceipt>> | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
+  const imageBusy = useRef(false);
+  const [readingImage, setReadingImage] = useState(false);
+  async function scanImage(file: File | undefined) {
+    if (!file || imageBusy.current) return;
+    imageBusy.current = true;
+    setReadingImage(true);
+    setError("");
+    setResult(null);
+    let reader: import("html5-qrcode").Html5Qrcode | undefined;
+    try {
+      const { Html5Qrcode } = await import("html5-qrcode");
+      reader = new Html5Qrcode("qr-image-reader", {
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        verbose: false,
+      });
+      const text = await reader.scanFile(file, false);
+      setInput(text);
+      await verify(text);
+    } catch (e) {
+      setError(
+        `QR image could not be read. Choose a clear VeriMark QR PNG. ${e instanceof Error ? e.message : String(e)}`,
+      );
+    } finally {
+      reader?.clear();
+      imageBusy.current = false;
+      setReadingImage(false);
+    }
+  }
   async function verify(text: string) {
     setWorking(true);
     setError("");
@@ -28,7 +58,7 @@ export function VerifyPanel() {
       if (!text.trim()) throw new Error("Enter a registration number or paste QR data.");
       const ledger = await fresh();
       let r: Receipt;
-      if (text.trim().startsWith("{")) r = parsePayload(text);
+      if (text.trim().startsWith("{")) r = resolvePayload(text, ledger);
       else {
         const matches = ledger.records.filter((r) => r.reg_no === text.trim());
         if (!matches.length) throw new Error("Registration number not found in this ledger.");
@@ -85,15 +115,38 @@ export function VerifyPanel() {
             />
           </label>
           <div className="verify-actions">
-            <Button variant="outline" onClick={() => setScanning(!scanning)}>
+            <Button
+              variant="outline"
+              disabled={readingImage || working}
+              onClick={() => setScanning(!scanning)}
+            >
               <Camera />
               Scan QR with Camera
             </Button>
-            <Button disabled={working} onClick={() => void verify(input)}>
+            <Button
+              variant="outline"
+              disabled={readingImage || working || scanning}
+              onClick={() => imageInput.current?.click()}
+            >
+              {readingImage ? <LoaderCircle className="spin" /> : <FileUp />}Upload QR Image
+            </Button>
+            <Button disabled={working || readingImage} onClick={() => void verify(input)}>
               {working ? <LoaderCircle className="spin" /> : <ShieldCheck />}Verify Marksheet
               <ArrowRight />
             </Button>
           </div>
+          <input
+            ref={imageInput}
+            className="sr-only"
+            type="file"
+            accept="image/*"
+            aria-label="Upload QR image file"
+            onChange={(e) => {
+              void scanImage(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          <div id="qr-image-reader" className="qr-image-reader" />
           {scanning && <Scanner onScan={onScan} onClose={() => setScanning(false)} />}
           {error && (
             <div className="error-banner" role="alert">

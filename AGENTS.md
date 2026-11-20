@@ -39,3 +39,5 @@ use the editor.
 - Treat named approvers and anonymous database setup as demonstration workflows, not authenticated authorization; never claim protection against a complete ledger rewrite without independent anchoring.
 - Keep the four workspaces as separate TanStack routes inside a persistent shared ledger provider.
 - Prebundle notification, QR, and dialog dependencies alongside the template's React entries to avoid late optimizer updates leaving open previews with mixed React module versions.
+- Issue compact QR payloads and resolve salt/subject/proofs by registration, leaf hash, and historical block; preserve supplied marks/grade for tamper detection and accept legacy full-proof payloads.
+- Export QR-only PNGs from the enlarged SVG with resolved black/white design tokens and integer module scaling; image-file decoding uses a separate scanner so it cannot contend with the camera.
