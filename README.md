@@ -1,24 +1,13 @@
-# Pixel Perfect Replica
+﻿# VeriMark Ledger — Tamper-Proof Exam Result Ledger (H8)
 
-Implement exactly the screenshot and nothing else
+VeriMark Ledger verifies academic exam records using SHA-256 hashing, Merkle trees, hash-chained blocks, printable QR marksheets, and a two-signature correction audit trail.
 
-This project was built with [Lovable](https://lovable.dev).
+## Key Features
+- **Publish Batch:** Computes per-record SHA-256 leaf hashes, builds a Merkle tree root, and appends a block to the hash chain.
+- **Student Marksheets & QR Codes:** Generates marksheet views and QR payloads for quick verification.
+- **Verify Marksheet:** Validates student records and Merkle proofs against ledger blocks and flags tampering.
+- **Two-Signature Corrections & Audit:** Requires two distinct approvers and a reason for corrections, and runs integrity audits across stored records and blocks.
 
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/70a78517-557c-4526-9dd5-60980e5a57bd).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
+## AI Usage Declaration
+- **Lovable:** Used to scaffold the initial React and Tailwind UI and core VeriMark workflows.
+- **IBM Bob:** Used locally for repository management, verification, and iterative code refinement.
